@@ -16,10 +16,7 @@ logger = get_logger(__name__)
 settings = get_settings()
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Startup / Shutdown
-# ─────────────────────────────────────────────────────────────────────────────
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Инициализация при старте, очистка при остановке."""
@@ -42,10 +39,7 @@ async def lifespan(app: FastAPI):
     logger.info("app_shutdown")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # App
-# ─────────────────────────────────────────────────────────────────────────────
-
 app = FastAPI(
     title="AutoReports API",
     description="Веб-сервис генерации и нормоконтроля НТД с использованием ИИ",
@@ -65,10 +59,7 @@ app.add_middleware(
 )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Global exception handlers
-# ─────────────────────────────────────────────────────────────────────────────
-
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     logger.error(
@@ -84,12 +75,8 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
     )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Routes
-# ─────────────────────────────────────────────────────────────────────────────
-
 app.include_router(api_router)
-
 
 @app.get("/health", tags=["system"])
 async def health_check() -> dict:

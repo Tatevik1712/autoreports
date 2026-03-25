@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from celery import Celery
 from celery.utils.log import get_task_logger
 
-from app.core.config import get_settings
+from backend.app.core.config import get_settings
 
 settings = get_settings()
 logger = get_task_logger(__name__)
