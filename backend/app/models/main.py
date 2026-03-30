@@ -7,9 +7,9 @@ from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from backend.app.api.v1.router import api_router
-from backend.app.core.config import get_settings
-from backend.app.core.logging import get_logger, setup_logging
+from app.api.v1.router import api_router
+from app.core.config import get_settings
+from app.core.logging import get_logger, setup_logging
 
 setup_logging()
 logger = get_logger(__name__)

@@ -9,9 +9,9 @@ from __future__ import annotations
 import chromadb
 from chromadb.config import Settings as ChromaSettings
 
-from backend.app.core.config import get_settings
-from backend.app.core.logging import get_logger
-from backend.app.services.rag.chunker import Chunk, ChunkType
+from app.core.config import get_settings
+from app.core.logging import get_logger
+from app.services.rag.chunker import Chunk, ChunkType
 
 logger = get_logger(__name__)
 settings = get_settings()

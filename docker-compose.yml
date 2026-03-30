@@ -1,9 +1,4 @@
-version: "3.9"
-
 services:
-  # ─────────────────────────────────────────
-  #  PostgreSQL
-  # ─────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
     container_name: autoreports_postgres
@@ -22,9 +17,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # ─────────────────────────────────────────
-  #  Redis  (брокер задач + кэш)
-  # ─────────────────────────────────────────
   redis:
     image: redis:7-alpine
     container_name: autoreports_redis
@@ -40,9 +32,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # ─────────────────────────────────────────
-  #  MinIO  (S3-совместимое хранилище файлов)
-  # ─────────────────────────────────────────
   minio:
     image: minio/minio:latest
     container_name: autoreports_minio
@@ -54,17 +43,14 @@ services:
     volumes:
       - minio_data:/data
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "19100:9000"
+      - "19101:9001"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # ─────────────────────────────────────────
-  #  Backend API (FastAPI)
-  # ─────────────────────────────────────────
   backend:
     build:
       context: ./backend
@@ -77,15 +63,16 @@ services:
       - MINIO_ENDPOINT=minio:9000
       - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
       - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
-      - SECRET_KEY=${SECRET_KEY:-change-me-in-production-min-32-chars}
+      - SECRET_KEY=${SECRET_KEY:-change-me-in-production-min-32-chars!!}
       - LLM_PROVIDER=${LLM_PROVIDER:-ollama}
       - LLM_BASE_URL=${LLM_BASE_URL:-http://ollama:11434}
-      - LLM_MODEL=${LLM_MODEL:-qwen2.5:14b}
+      - LLM_MODEL=${LLM_MODEL:-qwen2.5:7b}
       - ENVIRONMENT=${ENVIRONMENT:-development}
     volumes:
       - ./backend:/app
+      - chromadb_data:/app/data/chromadb
     ports:
-      - "8000:8000"
+      - "18000:8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -95,9 +82,7 @@ services:
         condition: service_healthy
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
-  # ─────────────────────────────────────────
-  #  Celery Worker  (обработка отчётов)
-  # ─────────────────────────────────────────
+  # BUG FIX: was "depends_on: -A app.workers..." — command was merged into depends_on
   worker:
     build:
       context: ./backend
@@ -110,13 +95,14 @@ services:
       - MINIO_ENDPOINT=minio:9000
       - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
       - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
-      - SECRET_KEY=${SECRET_KEY:-change-me-in-production-min-32-chars}
+      - SECRET_KEY=${SECRET_KEY:-change-me-in-production-min-32-chars!!}
       - LLM_PROVIDER=${LLM_PROVIDER:-ollama}
       - LLM_BASE_URL=${LLM_BASE_URL:-http://ollama:11434}
-      - LLM_MODEL=${LLM_MODEL:-qwen2.5:14b}
+      - LLM_MODEL=${LLM_MODEL:-qwen2.5:7b}
       - ENVIRONMENT=${ENVIRONMENT:-development}
     volumes:
       - ./backend:/app
+      - chromadb_data:/app/data/chromadb
     depends_on:
       postgres:
         condition: service_healthy
@@ -124,10 +110,6 @@ services:
         condition: service_healthy
     command: celery -A app.workers.celery_app worker --loglevel=info --concurrency=2 -Q reports
 
-  # ─────────────────────────────────────────
-  #  Ollama  (локальный LLM; можно отключить
-  #  если используется внешний API)
-  # ─────────────────────────────────────────
   ollama:
     image: ollama/ollama:latest
     container_name: autoreports_ollama
@@ -136,18 +118,7 @@ services:
       - ollama_data:/root/.ollama
     ports:
       - "11434:11434"
-    # Раскомментировать для GPU:
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
 
-  # ─────────────────────────────────────────
-  #  Nginx  (реверс-прокси; в dev опционален)
-  # ─────────────────────────────────────────
   nginx:
     image: nginx:alpine
     container_name: autoreports_nginx
@@ -159,10 +130,11 @@ services:
     depends_on:
       - backend
     profiles:
-      - prod   # только в prod: docker compose --profile prod up
+      - prod
 
 volumes:
   postgres_data:
   redis_data:
   minio_data:
   ollama_data:
+  chromadb_data:

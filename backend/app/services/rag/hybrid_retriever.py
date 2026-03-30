@@ -21,9 +21,9 @@ import asyncio
 import json
 from collections import defaultdict
 
-from backend.app.core.logging import get_logger
-from backend.app.services.rag.chunker import Chunk, ChunkType
-from backend.app.services.rag.vector_store import SearchResult
+from app.core.logging import get_logger
+from app.services.rag.chunker import Chunk, ChunkType
+from app.services.rag.vector_store import SearchResult
 
 logger = get_logger(__name__)
 

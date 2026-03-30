@@ -17,12 +17,12 @@ from typing import Any
 
 from jinja2 import Template
 
-from backend.app.core.logging import get_logger
-from backend.app.schemas.schemas import TemplateSchema, TemplateSection, ValidationErrorItem
-from backend.app.services.document.parser import ParsedDocument
-from backend.app.services.llm.provider import LLMProvider, LLMResult
-from backend.app.services.rag.context_builder import BuiltContext
-from backend.app.services.rag.pipeline import IndexingStats, RAGPipeline, RetrievalDebugInfo
+from app.core.logging import get_logger
+from app.schemas.schemas import TemplateSchema, TemplateSection, ValidationErrorItem
+from app.services.document.parser import ParsedDocument
+from app.services.llm.provider import LLMProvider, LLMResult
+from app.services.rag.context_builder import BuiltContext
+from app.services.rag.pipeline import IndexingStats, RAGPipeline, RetrievalDebugInfo
 
 logger = get_logger(__name__)
 

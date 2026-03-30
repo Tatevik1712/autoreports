@@ -6,7 +6,7 @@ from alembic import context
 from sqlalchemy.ext.asyncio import create_async_engine
 
 # Импортируем все модели, чтобы alembic видел их в Base.metadata
-from backend.app.db.session import Base
+from app.db.session import Base
 from app.models import models  # noqa: F401  — регистрирует таблицы
 
 config = context.config
@@ -17,7 +17,7 @@ target_metadata = Base.metadata
 
 
 def get_url() -> str:
-    from backend.app.core.config import get_settings
+    from app.core.config import get_settings
     return get_settings().database_url
 
 

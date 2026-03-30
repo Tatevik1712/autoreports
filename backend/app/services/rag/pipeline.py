@@ -19,14 +19,14 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass, field
 
-from backend.app.core.logging import get_logger
-from backend.app.services.document.parser import ParsedDocument
-from backend.app.services.rag.bm25_retriever import BM25Retriever
-from backend.app.services.rag.chunker import Chunk, ChunkType, get_chunker
-from backend.app.services.rag.context_builder import BuiltContext, get_context_builder
-from backend.app.services.rag.embeddings import get_embedding_service
-from backend.app.services.rag.hybrid_retriever import get_hybrid_retriever
-from backend.app.services.rag.vector_store import SearchResult, get_vector_store
+from app.core.logging import get_logger
+from app.services.document.parser import ParsedDocument
+from app.services.rag.bm25_retriever import BM25Retriever
+from app.services.rag.chunker import Chunk, ChunkType, get_chunker
+from app.services.rag.context_builder import BuiltContext, get_context_builder
+from app.services.rag.embeddings import get_embedding_service
+from app.services.rag.hybrid_retriever import get_hybrid_retriever
+from app.services.rag.vector_store import SearchResult, get_vector_store
 
 logger = get_logger(__name__)
 

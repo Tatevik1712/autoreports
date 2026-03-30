@@ -18,8 +18,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Iterator
 
-from backend.app.core.logging import get_logger
-from backend.app.services.document.parser import ParsedDocument
+from app.core.logging import get_logger
+from app.services.document.parser import ParsedDocument
 
 logger = get_logger(__name__)
 

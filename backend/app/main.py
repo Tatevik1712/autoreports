@@ -7,9 +7,9 @@ from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from backend.app.api.v1.router import api_router
-from backend.app.core.config import get_settings
-from backend.app.core.logging import get_logger, setup_logging
+from app.api.v1.router import api_router
+from app.core.config import get_settings
+from app.core.logging import get_logger, setup_logging
 
 setup_logging()
 logger = get_logger(__name__)
@@ -23,12 +23,12 @@ async def lifespan(app: FastAPI):
     logger.info("app_startup", env=settings.environment, llm=settings.llm_provider)
 
     # Создаём бакеты в MinIO, если их нет
-    from backend.app.services.storage import get_storage_client
+    from app.services.storage import get_storage_client
     await get_storage_client().ensure_buckets()
 
     # Прогрев LLM-соединения (не блокирует, просто логирует)
     try:
-        from backend.app.services.llm.provider import get_llm_provider
+        from app.services.llm.provider import get_llm_provider
         get_llm_provider()
         logger.info("llm_provider_ready", provider=settings.llm_provider)
     except Exception as exc:

@@ -9,7 +9,7 @@ from typing import Any
 import structlog
 from structlog.types import EventDict, WrappedLogger
 
-from backend.app.core.config import get_settings
+from app.core.config import get_settings
 
 # Поля, которые НИКОГДА не попадут в логи
 _SENSITIVE_FIELDS = frozenset(

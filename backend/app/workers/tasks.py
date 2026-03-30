@@ -42,8 +42,11 @@ def process_report(self, report_id: str) -> dict:
 
 
 async def _process_report_async(report_id: str) -> dict:
+    from sqlalchemy import select
+    from sqlalchemy.orm import selectinload
+
     from app.db.session import AsyncSessionLocal
-    from app.models.models import Report, ReportStatus, SourceFile
+    from app.models.models import Report, ReportSourceFile, ReportStatus
     from app.services.document.parser import get_document_parser
     from app.services.llm.provider import get_llm_provider
     from app.services.report.rag_generator import get_rag_report_generator
@@ -52,11 +55,20 @@ async def _process_report_async(report_id: str) -> dict:
     from app.schemas.schemas import TemplateSchema
 
     async with AsyncSessionLocal() as db:
-        report = await db.get(Report, report_id)
+        # BUG FIX: db.refresh() не принимает список атрибутов в asyncpg.
+        # Используем selectinload через явный select-запрос.
+        result = await db.execute(
+            select(Report)
+            .where(Report.id == report_id)
+            .options(
+                selectinload(Report.template),
+                selectinload(Report.source_files).selectinload(ReportSourceFile.source_file),
+            )
+        )
+        report = result.scalar_one_or_none()
         if not report:
             raise ValueError(f"Report {report_id} not found")
 
-        await db.refresh(report, ["template", "source_files"])
         report.status = ReportStatus.processing
         await db.commit()
 
@@ -67,7 +79,10 @@ async def _process_report_async(report_id: str) -> dict:
         for rsf in report.source_files:
             sf = rsf.source_file
             try:
-                content = await storage.download(bucket=storage.bucket_sources, key=sf.storage_key)
+                content = await storage.download(
+                    bucket=storage.bucket_sources,
+                    key=sf.storage_key,
+                )
                 parsed = await parser.parse(content, sf.original_filename, sf.content_type)
                 parsed_docs.append(parsed)
                 logger.info(f"Parsed {sf.original_filename}: {len(parsed.text)} chars")
@@ -104,7 +119,10 @@ async def _process_report_async(report_id: str) -> dict:
             bucket=storage.bucket_reports,
             key=result_key,
             content=docx_bytes,
-            content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            content_type=(
+                "application/vnd.openxmlformats-officedocument"
+                ".wordprocessingml.document"
+            ),
         )
 
         report.status = ReportStatus.done

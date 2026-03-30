@@ -1,28 +1,28 @@
 """
 JWT авторизация + хэширование паролей.
-Архитектурно готово к замене на LDAP/OpenID в стадии 3.
+Использует bcrypt напрямую (без passlib — несовместима с bcrypt 4.x).
 """
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+import bcrypt
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 
-from backend.app.core.config import get_settings
+from app.core.config import get_settings
 
 settings = get_settings()
-
-_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 # ── Пароли ────────────────────────────────────────────────────────────────────
 
 def hash_password(password: str) -> str:
-    return _pwd_context.hash(password)
+    pwd_bytes = password.encode("utf-8")
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(pwd_bytes, salt).decode("utf-8")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return _pwd_context.verify(plain, hashed)
+    return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
 
 
 # ── JWT токены ────────────────────────────────────────────────────────────────
@@ -38,8 +38,4 @@ def create_access_token(data: dict[str, Any]) -> str:
 
 
 def decode_access_token(token: str) -> dict[str, Any]:
-    """
-    Raises:
-        JWTError: если токен невалиден или истёк.
-    """
     return jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])

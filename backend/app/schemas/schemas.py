@@ -6,7 +6,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
-from backend.app.models.models import ReportStatus, SourceFileStatus, UserRole
+from app.models.models import ReportStatus, SourceFileStatus, UserRole
 
 
 # ─────────────────────────────────────────────────────────────────────────────

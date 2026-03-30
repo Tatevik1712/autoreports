@@ -15,8 +15,8 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 
-from backend.app.services.rag.chunker import ChunkType
-from backend.app.services.rag.vector_store import SearchResult
+from app.services.rag.chunker import ChunkType
+from app.services.rag.vector_store import SearchResult
 
 MAX_CONTEXT_CHARS = 12_000   # ~3000 токенов — оставляем место для промпта и ответа
 MAX_SINGLE_CHUNK = 3_000     # ограничиваем один чанк

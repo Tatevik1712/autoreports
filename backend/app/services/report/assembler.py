@@ -12,8 +12,8 @@ from docx.oxml import OxmlElement
 from docx.shared import Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 
-from backend.app.core.logging import get_logger
-from backend.app.schemas.schemas import TemplateSchema, ValidationErrorItem
+from app.core.logging import get_logger
+from app.schemas.schemas import TemplateSchema, ValidationErrorItem
 
 logger = get_logger(__name__)
 

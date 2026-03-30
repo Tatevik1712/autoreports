@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import DeclarativeBase
 
-from backend.app.core.config import get_settings
+from app.core.config import get_settings
 
 settings = get_settings()
 

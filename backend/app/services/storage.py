@@ -8,8 +8,8 @@ import io
 import aioboto3
 from botocore.exceptions import ClientError
 
-from backend.app.core.config import get_settings
-from backend.app.core.logging import get_logger
+from app.core.config import get_settings
+from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 settings = get_settings()

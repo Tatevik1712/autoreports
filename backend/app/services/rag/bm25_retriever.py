@@ -11,8 +11,8 @@ from __future__ import annotations
 import re
 import string
 
-from backend.app.core.logging import get_logger
-from backend.app.services.rag.vector_store import SearchResult
+from app.core.logging import get_logger
+from app.services.rag.vector_store import SearchResult
 
 logger = get_logger(__name__)
 
