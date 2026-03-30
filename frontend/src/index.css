@@ -1,0 +1,106 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@layer base {
+  :root {
+    --background: 210 25% 97%;
+    --foreground: 210 50% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 50% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 50% 10%;
+
+    --primary: 210 70% 11%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 25% 93%;
+    --secondary-foreground: 210 50% 10%;
+
+    --muted: 210 20% 94%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 193 100% 42%;
+    --accent-foreground: 0 0% 100%;
+
+    --gold: 44 90% 61%;
+    --gold-foreground: 210 50% 10%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 210 50% 10%;
+
+    --info: 207 90% 54%;
+    --info-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 193 100% 42%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 210 70% 11%;
+    --sidebar-foreground: 210 20% 85%;
+    --sidebar-primary: 193 100% 42%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 60% 16%;
+    --sidebar-accent-foreground: 210 20% 90%;
+    --sidebar-border: 210 50% 18%;
+    --sidebar-ring: 193 100% 42%;
+    --sidebar-muted: 210 30% 25%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .status-pending {
+    @apply bg-muted text-muted-foreground;
+  }
+  .status-processing {
+    @apply bg-info/10 text-info;
+  }
+  .status-done {
+    @apply bg-success/10 text-success;
+  }
+  .status-error {
+    @apply bg-destructive/10 text-destructive;
+  }
+
+  .severity-error {
+    @apply bg-destructive/10 text-destructive border-destructive/20;
+  }
+  .severity-warning {
+    @apply bg-warning/10 text-warning border-warning/20;
+  }
+  .severity-info {
+    @apply bg-info/10 text-info border-info/20;
+  }
+}
+
+@keyframes pulse-processing {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.animate-pulse-processing {
+  animation: pulse-processing 1.5s ease-in-out infinite;
+}
