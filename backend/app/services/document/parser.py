@@ -155,6 +155,7 @@ class DocumentParser:
                 sheet_text += "\n".join("\t".join(r) for r in rows)
                 sheets_text.append(sheet_text)
 
+        sheet_count = len(wb.sheetnames)
         wb.close()
         full_text = "\n\n".join(sheets_text)
         return ParsedDocument(
@@ -163,7 +164,7 @@ class DocumentParser:
             text=full_text,
             pages=sheets_text,
             tables=tables,
-            meta={"sheet_count": len(wb.sheetnames)},
+            meta={"sheet_count": sheet_count},
         )
 
     # ── TXT ───────────────────────────────────────────────────────────────────
@@ -172,9 +173,11 @@ class DocumentParser:
         self, content: bytes, filename: str, content_type: str
     ) -> ParsedDocument:
         # Пробуем UTF-8, потом cp1251 (частый кодек в корп. среде)
-        for encoding in ("utf-8", "cp1251", "latin-1"):
+        encoding = "utf-8"
+        for enc in ("utf-8", "cp1251", "latin-1"):
             try:
-                text = content.decode(encoding)
+                text = content.decode(enc)
+                encoding = enc
                 break
             except UnicodeDecodeError:
                 continue

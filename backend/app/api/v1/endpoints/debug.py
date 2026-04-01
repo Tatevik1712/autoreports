@@ -1,9 +1,12 @@
 """
-Эндпоинт диагностики RAG — показывает какие чанки попали в промпт.
+Эндпоинт диагностики RAG.
+FIX: заменён __import__ антипаттерн на нормальный импорт.
 Только для администраторов.
 """
 from fastapi import APIRouter, HTTPException
+
 from app.api.deps import CurrentAdmin, DbSession
+from app.models.models import Report  # FIX: нормальный импорт
 
 router = APIRouter(prefix="/debug", tags=["debug"])
 
@@ -14,11 +17,8 @@ async def get_retrieval_debug(
     current_admin: CurrentAdmin,
     db: DbSession,
 ) -> dict:
-    """
-    Возвращает статистику RAG-индексации и нормоконтроля для отчёта.
-    Показывает: сколько чанков, таблиц, какие ошибки индексации.
-    """
-    report = await db.get(__import__("app.models.models", fromlist=["Report"]).Report, report_id)
+    """Статистика RAG для отчёта — только для администраторов."""
+    report = await db.get(Report, report_id)
     if not report:
         raise HTTPException(status_code=404, detail="Отчёт не найден")
 

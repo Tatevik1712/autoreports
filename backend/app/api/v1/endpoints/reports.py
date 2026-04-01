@@ -1,5 +1,6 @@
 """
-Эндпоинты отчётов: создание, статус, скачивание, перегенерация.
+Эндпоинты отчётов: создание, статус, скачивание, перегенерация
+v2: использует from_orm_report() для корректной сериализации с frontend-полями
 """
 from fastapi import APIRouter, HTTPException, Response, status
 from sqlalchemy import func, select
@@ -27,17 +28,11 @@ async def create_report(
     payload: ReportCreate,
     current_user: CurrentUser,
     db: DbSession,
-) -> Report:
-    """
-    Создаёт отчёт и ставит задачу в очередь Celery.
-    Возвращает сразу (статус pending) — результат асинхронный.
-    """
-    # Проверяем шаблон
+) -> dict:
     template = await db.get(ReportTemplate, payload.template_id)
     if not template or not template.is_active:
         raise HTTPException(status_code=404, detail="Шаблон не найден или неактивен")
 
-    # Проверяем файлы — только свои
     file_results = await db.execute(
         select(SourceFile).where(
             SourceFile.id.in_(payload.source_file_ids),
@@ -45,14 +40,12 @@ async def create_report(
         )
     )
     files = file_results.scalars().all()
-
     if len(files) != len(payload.source_file_ids):
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Один или несколько файлов не найдены",
         )
 
-    # Создаём отчёт
     report = Report(
         owner_id=current_user.id,
         template_id=template.id,
@@ -61,9 +54,8 @@ async def create_report(
         template_version=template.version,
     )
     db.add(report)
-    await db.flush()  # получаем report.id
+    await db.flush()
 
-    # Привязываем файлы
     for sf in files:
         db.add(ReportSourceFile(report_id=report.id, source_file_id=sf.id))
 
@@ -74,17 +66,26 @@ async def create_report(
         resource_id=report.id,
         extra={"template": template.slug, "files": len(files)},
     ))
-
     await db.commit()
-    await db.refresh(report)
 
-    # Ставим задачу в очередь (Celery)
-    task = process_report.apply_async(args=[report.id], queue="reports")
+    # Перезагружаем со связями для сериализации
+    result = await db.execute(
+        select(Report)
+        .where(Report.id == report.id)
+        .options(
+            selectinload(Report.owner),
+            selectinload(Report.template),
+            selectinload(Report.source_files),
+        )
+    )
+    report = result.scalar_one()
+
+    task = process_report.apply(args=[report.id])
     report.task_id = task.id
     await db.commit()
 
-    logger.info("report_queued", report_id=report.id, task_id=task.id, user=current_user.id)
-    return report
+    logger.info("report_queued", report_id=report.id, task_id=task.id)
+    return ReportRead.from_orm_report(report).model_dump()
 
 
 @router.get("", response_model=PaginatedResponse)
@@ -93,11 +94,11 @@ async def list_reports(
     db: DbSession,
     pagination: Pagination,
 ) -> PaginatedResponse:
-    """
-    Список отчётов.
-    Пользователь видит только свои. Администратор — все.
-    """
-    base_query = select(Report)
+    base_query = select(Report).options(
+        selectinload(Report.owner),
+        selectinload(Report.template),
+        selectinload(Report.source_files),
+    )
     count_query = select(func.count()).select_from(Report)
 
     if current_user.role != UserRole.admin:
@@ -105,7 +106,6 @@ async def list_reports(
         count_query = count_query.where(Report.owner_id == current_user.id)
 
     total = (await db.execute(count_query)).scalar_one()
-
     result = await db.execute(
         base_query
         .order_by(Report.created_at.desc())
@@ -118,7 +118,7 @@ async def list_reports(
         total=total,
         page=pagination.page,
         page_size=pagination.page_size,
-        items=[ReportRead.model_validate(r) for r in reports],
+        items=[ReportRead.from_orm_report(r).model_dump() for r in reports],
     )
 
 
@@ -127,8 +127,7 @@ async def get_report(
     report_id: str,
     current_user: CurrentUser,
     db: DbSession,
-) -> Report:
-    """Детальный вид отчёта с файлами и шаблоном."""
+) -> dict:
     result = await db.execute(
         select(Report)
         .where(Report.id == report_id)
@@ -142,12 +141,10 @@ async def get_report(
 
     if not report:
         raise HTTPException(status_code=404, detail="Отчёт не найден")
-
-    # Пользователь видит только свои
     if current_user.role != UserRole.admin and report.owner_id != current_user.id:
         raise HTTPException(status_code=404, detail="Отчёт не найден")
 
-    return report
+    return ReportDetail.from_orm_report(report).model_dump()
 
 
 @router.get("/{report_id}/download")
@@ -156,28 +153,21 @@ async def download_report(
     current_user: CurrentUser,
     db: DbSession,
 ) -> Response:
-    """Скачивание готового DOCX-отчёта."""
     report = await db.get(Report, report_id)
     if not report:
         raise HTTPException(status_code=404, detail="Отчёт не найден")
-
     if current_user.role != UserRole.admin and report.owner_id != current_user.id:
         raise HTTPException(status_code=404, detail="Отчёт не найден")
-
     if report.status != ReportStatus.done:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"Отчёт ещё не готов. Текущий статус: {report.status.value}",
+            detail=f"Отчёт ещё не готов. Статус: {report.status.value}",
         )
-
     if not report.result_storage_key:
         raise HTTPException(status_code=404, detail="Файл отчёта не найден")
 
     storage = get_storage_client()
-    content = await storage.download(
-        bucket=storage.bucket_reports,
-        key=report.result_storage_key,
-    )
+    content = await storage.download(bucket=storage.bucket_reports, key=report.result_storage_key)
 
     safe_title = "".join(c for c in report.title if c.isalnum() or c in " _-")[:50]
     filename = f"{safe_title}.docx"
@@ -203,45 +193,58 @@ async def regenerate_report(
     payload: ReportRegenerate,
     current_user: CurrentUser,
     db: DbSession,
-) -> Report:
-    """
-    Перегенерация отчёта с новыми настройками.
-    Файлы не нужно загружать повторно.
-    """
-    original = await db.get(Report, report_id)
+) -> dict:
+    result = await db.execute(
+        select(Report)
+        .where(Report.id == report_id)
+        .options(
+            selectinload(Report.owner),
+            selectinload(Report.template),
+            selectinload(Report.source_files),
+        )
+    )
+    original = result.scalar_one_or_none()
+
     if not original:
         raise HTTPException(status_code=404, detail="Отчёт не найден")
-
     if current_user.role != UserRole.admin and original.owner_id != current_user.id:
         raise HTTPException(status_code=404, detail="Отчёт не найден")
 
-    # Клонируем с новыми параметрами
     new_report = Report(
         owner_id=original.owner_id,
         template_id=original.template_id,
-        title=f"{original.title} [перегенерация]",
+        title=original.title,
         generation_params={**original.generation_params, **payload.generation_params},
         template_version=original.template_version,
     )
     db.add(new_report)
     await db.flush()
 
-    # Копируем ссылки на файлы
     for rsf in original.source_files:
-        db.add(ReportSourceFile(
-            report_id=new_report.id,
-            source_file_id=rsf.source_file_id,
-        ))
+        db.add(ReportSourceFile(report_id=new_report.id, source_file_id=rsf.source_file_id))
 
     await db.commit()
-    await db.refresh(new_report)
 
-    task = process_report.apply_async(args=[new_report.id], queue="reports")
+    result2 = await db.execute(
+        select(Report)
+        .where(Report.id == new_report.id)
+        .options(
+            selectinload(Report.owner),
+            selectinload(Report.template),
+            selectinload(Report.source_files),
+        )
+    )
+    new_report = result2.scalar_one()
+
+    #task = process_report.apply_async(args=[new_report.id], queue="reports")
+
+    task = process_report.apply(args=[new_report.id])
+
     new_report.task_id = task.id
     await db.commit()
 
     logger.info("report_regenerated", original=report_id, new=new_report.id)
-    return new_report
+    return ReportRead.from_orm_report(new_report).model_dump()
 
 
 @router.delete("/{report_id}", response_model=MessageResponse)
@@ -250,15 +253,12 @@ async def delete_report(
     current_user: CurrentUser,
     db: DbSession,
 ) -> MessageResponse:
-    """Удаление отчёта (и файла из MinIO)."""
     report = await db.get(Report, report_id)
     if not report:
         raise HTTPException(status_code=404, detail="Отчёт не найден")
-
     if current_user.role != UserRole.admin and report.owner_id != current_user.id:
         raise HTTPException(status_code=404, detail="Отчёт не найден")
 
-    # Удаляем файл из хранилища
     if report.result_storage_key:
         storage = get_storage_client()
         try:
@@ -268,5 +268,4 @@ async def delete_report(
 
     await db.delete(report)
     await db.commit()
-
     return MessageResponse(message="Отчёт удалён")

@@ -16,30 +16,34 @@ logger = get_logger(__name__)
 settings = get_settings()
 
 
-# Startup / Shutdown
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Инициализация при старте, очистка при остановке."""
+    """Инициализация при старте."""
     logger.info("app_startup", env=settings.environment, llm=settings.llm_provider)
 
-    # Создаём бакеты в MinIO, если их нет
-    from app.services.storage import get_storage_client
-    await get_storage_client().ensure_buckets()
+    # FIX: storage инициализируется с обработкой ошибок
+    # При локальном запуске без MinIO — переключается на LocalStorageClient
+    try:
+        from app.services.storage import get_storage_client
+        await get_storage_client().ensure_buckets()
+        logger.info("storage_ready", backend=settings.storage_backend)
+    except Exception as exc:
+        logger.warning("storage_init_failed", error=str(exc),
+                       hint="Установите storage_backend=local в .env для работы без MinIO")
 
-    # Прогрев LLM-соединения (не блокирует, просто логирует)
+    # Прогрев LLM (не блокирует запуск)
     try:
         from app.services.llm.provider import get_llm_provider
         get_llm_provider()
-        logger.info("llm_provider_ready", provider=settings.llm_provider)
+        logger.info("llm_provider_ready", provider=settings.llm_provider, model=settings.llm_model)
     except Exception as exc:
-        logger.warning("llm_provider_init_failed", error=str(exc))
+        logger.warning("llm_provider_init_failed", error=str(exc),
+                       hint="LLM недоступен — убедитесь что Ollama запущен")
 
     yield
-
     logger.info("app_shutdown")
 
 
-# App
 app = FastAPI(
     title="AutoReports API",
     description="Веб-сервис генерации и нормоконтроля НТД с использованием ИИ",
@@ -49,7 +53,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS (в prod — ограничить до конкретных origin)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"] if settings.is_development else [],
@@ -59,7 +62,6 @@ app.add_middleware(
 )
 
 
-# Global exception handlers
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     logger.error(
@@ -75,10 +77,14 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
     )
 
 
-# Routes
 app.include_router(api_router)
+
 
 @app.get("/health", tags=["system"])
 async def health_check() -> dict:
-    """Healthcheck для Docker / Kubernetes."""
-    return {"status": "ok", "env": settings.environment}
+    return {
+        "status": "ok",
+        "env": settings.environment,
+        "storage": settings.storage_backend,
+        "llm": settings.llm_provider,
+    }
