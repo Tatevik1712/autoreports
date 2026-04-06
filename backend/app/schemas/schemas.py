@@ -289,7 +289,30 @@ class ReportDetail(ReportRead):
 
     @classmethod
     def from_orm_report(cls, report) -> "ReportDetail":
-        instance = cls.model_validate(report)
+        # Сначала вручную собираем source_files из M2M-связи
+        source_files_data = []
+        if hasattr(report, 'source_files') and report.source_files:
+            for rsf in report.source_files:
+                sf = rsf.source_file if hasattr(rsf, 'source_file') else None
+                if sf:
+                    source_files_data.append({
+                        "id": sf.id,
+                        "original_filename": sf.original_filename,
+                        "filename": sf.original_filename,
+                        "content_type": sf.content_type,
+                        "size_bytes": sf.size_bytes,
+                        "size": sf.size_bytes,
+                        "status": sf.status,
+                        "parse_error": sf.parse_error,
+                        "error_message": sf.parse_error,
+                        "meta": sf.meta or {},
+                        "uploaded_at": sf.uploaded_at,
+                        "user_id": sf.owner_id,
+                    })
+
+        # Создаём instance без source_files
+        instance = cls.model_validate(report, context={"source_files": []})
+        instance.source_files = []
 
         # Заполняем алиасные поля
         if hasattr(report, 'template') and report.template:
@@ -302,31 +325,30 @@ class ReportDetail(ReportRead):
             instance.source_file_ids = [rsf.source_file_id for rsf in report.source_files]
         instance.processing_time_seconds = report.processing_seconds
 
-        # RAG debug — извлекаем из generation_params
+        # RAG debug
         params = getattr(report, 'generation_params', {}) or {}
         rag_stats = params.get("_rag_stats", {})
         retrieval_debug = params.get("_retrieval_debug", [])
         if rag_stats:
             instance.rag_debug = {
-                "total_chunks":        rag_stats.get("total_chunks", 0),
-                "total_tables":        rag_stats.get("table_chunks", 0),
-                "total_numeric_blocks":rag_stats.get("numeric_chunks", 0),
-                "document_map":        rag_stats.get("document_map", ""),
-                "indexing_errors":     rag_stats.get("errors", []),
+                "total_chunks": rag_stats.get("total_chunks", 0),
+                "total_tables": rag_stats.get("table_chunks", 0),
+                "total_numeric_blocks": rag_stats.get("numeric_chunks", 0),
+                "document_map": rag_stats.get("document_map", ""),
+                "indexing_errors": rag_stats.get("errors", []),
                 "chunks": [
                     {
-                        "query":   chunk.get("query", ""),
-                        "score":   chunk.get("rerank", chunk.get("rrf", 0)),
+                        "query": chunk.get("query", ""),
+                        "score": chunk.get("rerank", chunk.get("rrf", 0)),
                         "preview": chunk.get("preview", ""),
                         "section": chunk.get("section", ""),
                     }
                     for section_debug in retrieval_debug
                     for chunk in section_debug.get("chunks", [])
-                ][:20],  # не больше 20 чанков для UI
+                ][:20],
             }
 
         return instance
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Generic responses
