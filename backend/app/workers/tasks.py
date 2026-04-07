@@ -11,10 +11,18 @@ import asyncio
 
 logger = get_task_logger(__name__)
 
+# Получаем текущий event loop или создаем новый
 def _run_async(coro):
-    return asyncio.run(coro)
-
-
+    """Запускает корутину в существующем event loop или создает новый"""
+    try:
+        # Пытаемся получить текущий running loop
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        # Нет running loop, создаем новый
+        return asyncio.run(coro)
+    else:
+        # Есть running loop, используем create_task
+        return loop.create_task(coro)
 
 @celery_app.task(
     bind=True,
