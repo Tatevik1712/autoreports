@@ -283,7 +283,7 @@ curl http://localhost:11434/api/tags
 
 ## Что дальше в проекте
 
-### Готово ✅
+### Готово 
 - Полная инфраструктура (Docker Compose)
 - БД с миграциями (PostgreSQL + Alembic)
 - Auth (JWT, роли user/admin)
@@ -294,8 +294,8 @@ curl http://localhost:11434/api/tags
 - Хранилище файлов (MinIO)
 - Debug API
 
-### Нужно сделать 🔧
-- [ ] **Фронтенд** (React) — сейчас только API, нет UI
+### Нужно сделать 
+- [ + ] **Фронтенд** (React) — сейчас только API, нет UI
 - [ ] **Тесты** — unit для chunker/parser, integration для pipeline
 - [ ] **Перегенерация** — проверить что `POST /reports/{id}/regenerate` работает
 - [ ] **Паспорт ИС** — документация для заказчика
