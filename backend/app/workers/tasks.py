@@ -5,20 +5,15 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime, timezone
-
 from celery.utils.log import get_task_logger
-
 from app.workers.celery_app import celery_app
+import asyncio
 
 logger = get_task_logger(__name__)
 
-
 def _run_async(coro):
-    loop = asyncio.new_event_loop()
-    try:
-        return loop.run_until_complete(coro)
-    finally:
-        loop.close()
+    return asyncio.run(coro)
+
 
 
 @celery_app.task(
