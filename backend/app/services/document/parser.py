@@ -8,12 +8,11 @@
 - TXT: исправлена переменная encoding в блоке for/else
 """
 from __future__ import annotations
-
 import io
 from dataclasses import dataclass, field
 from pathlib import Path
-
 from app.core.logging import get_logger
+from docx import Document
 
 logger = get_logger(__name__)
 
@@ -69,7 +68,6 @@ class DocumentParser:
     # Используем pymupdf4llm.to_markdown() вместо page.get_text().
     # Это даёт Markdown-разметку с заголовками (#, ##), таблицами и жирным —
     # RAG-pipeline потом лучше разбивает такой текст на смысловые чанки.
-
     async def _parse_pdf(
         self, content: bytes, filename: str, content_type: str
     ) -> ParsedDocument:
@@ -153,7 +151,6 @@ class DocumentParser:
     async def _parse_docx(
         self, content: bytes, filename: str, content_type: str
     ) -> ParsedDocument:
-        from docx import Document
 
         doc = Document(io.BytesIO(content))
 
