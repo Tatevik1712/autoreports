@@ -31,10 +31,7 @@ def _uuid() -> str:
     return str(uuid.uuid4())
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Enums
-# ─────────────────────────────────────────────────────────────────────────────
-
 class UserRole(str, enum.Enum):
     user = "user"
     admin = "admin"
@@ -53,10 +50,7 @@ class SourceFileStatus(str, enum.Enum):
     parse_error = "parse_error"
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # User
-# ─────────────────────────────────────────────────────────────────────────────
-
 class User(Base):
     __tablename__ = "users"
 
@@ -79,10 +73,7 @@ class User(Base):
     audit_logs: Mapped[list["AuditLog"]] = relationship(back_populates="user", lazy="select")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # ReportTemplate
-# ─────────────────────────────────────────────────────────────────────────────
-
 class ReportTemplate(Base):
     __tablename__ = "report_templates"
     __table_args__ = (
@@ -113,10 +104,7 @@ class ReportTemplate(Base):
     reports: Mapped[list["Report"]] = relationship(back_populates="template", lazy="select")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # SourceFile — загруженный пользователем файл
-# ─────────────────────────────────────────────────────────────────────────────
-
 class SourceFile(Base):
     __tablename__ = "source_files"
 
@@ -149,10 +137,7 @@ class SourceFile(Base):
     owner: Mapped["User"] = relationship(lazy="select")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Report
-# ─────────────────────────────────────────────────────────────────────────────
-
 class Report(Base):
     __tablename__ = "reports"
 
@@ -204,10 +189,7 @@ class Report(Base):
     )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # ReportSourceFile — M2M: отчёт ↔ исходные файлы
-# ─────────────────────────────────────────────────────────────────────────────
-
 class ReportSourceFile(Base):
     __tablename__ = "report_source_files"
 
@@ -223,10 +205,7 @@ class ReportSourceFile(Base):
     source_file: Mapped["SourceFile"] = relationship(lazy="select")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # AuditLog — действия пользователей
-# ─────────────────────────────────────────────────────────────────────────────
-
 class AuditLog(Base):
     __tablename__ = "audit_logs"
 
