@@ -13,10 +13,10 @@ Chunker v2 — Parent-Child стратегия для документов 20–
 """
 from __future__ import annotations
 
-import re
+from collections.abc import Iterator
 from dataclasses import dataclass, field
-from enum import Enum
-from typing import Iterator
+from enum import StrEnum
+import re
 
 from app.core.logging import get_logger
 from app.services.document.parser import ParsedDocument
@@ -31,7 +31,7 @@ MIN_CHUNK_SIZE    = 60
 MAX_TABLE_CHUNK   = 4000   # таблицы больше этого — режем по строкам
 
 
-class ChunkType(str, Enum):
+class ChunkType(StrEnum):
     text    = "text"
     table   = "table"
     heading = "heading"

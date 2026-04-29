@@ -4,11 +4,10 @@
 """
 from __future__ import annotations
 
-import time
 from dataclasses import dataclass
+import time
 from typing import Protocol
 
-import httpx
 from langchain_openai import ChatOpenAI
 
 from app.core.config import get_settings
@@ -176,10 +175,9 @@ def create_llm_provider() -> LLMProvider:
 
     if provider in ("ollama", "openai"):
         return OllamaOpenAIProvider()
-    elif provider == "anthropic":
+    if provider == "anthropic":
         return AnthropicProvider()
-    else:
-        raise ValueError(f"Неизвестный LLM провайдер: {provider}")
+    raise ValueError(f"Неизвестный LLM провайдер: {provider}")
 
 
 # Синглтон — создаётся один раз при старте приложения

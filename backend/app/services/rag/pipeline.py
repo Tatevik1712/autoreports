@@ -16,8 +16,7 @@ RAG Pipeline v2 — оптимизирован для стадии 1 (преоб
 """
 from __future__ import annotations
 
-import asyncio
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from app.core.logging import get_logger
 from app.services.document.parser import ParsedDocument

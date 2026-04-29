@@ -17,9 +17,8 @@ Cross-encoder (шаг 3) — ключевое улучшение для точн
 """
 from __future__ import annotations
 
-import asyncio
-import json
 from collections import defaultdict
+import json
 
 from app.core.logging import get_logger
 from app.services.rag.chunker import Chunk, ChunkType
@@ -157,9 +156,9 @@ async def _llm_rerank(
     LLM оценивает релевантность каждого кандидата (0-10).
     Работает батчами по 10, чтобы не переполнить контекст.
     """
-    BATCH = 10
-    for i in range(0, len(candidates), BATCH):
-        batch = candidates[i : i + BATCH]
+    _batch_size = 10
+    for i in range(0, len(candidates), _batch_size):
+        batch = candidates[i : i + _batch_size]
         fragments_text = "\n\n".join(
             f"[{j}] {r.child_text[:400]}"   # child_text — короткий, для оценки
             for j, r in enumerate(batch)

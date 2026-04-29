@@ -6,15 +6,24 @@ from fastapi import APIRouter, HTTPException, Response, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
-from app.api.deps import CurrentAdmin, CurrentUser, DbSession, Pagination
+from app.api.deps import CurrentUser, DbSession, Pagination
 from app.core.logging import get_logger
 from app.models.models import (
-    AuditLog, Report, ReportSourceFile, ReportStatus,
-    ReportTemplate, SourceFile, UserRole,
+    AuditLog,
+    Report,
+    ReportSourceFile,
+    ReportStatus,
+    ReportTemplate,
+    SourceFile,
+    UserRole,
 )
 from app.schemas.schemas import (
-    MessageResponse, PaginatedResponse,
-    ReportCreate, ReportDetail, ReportRead, ReportRegenerate,
+    MessageResponse,
+    PaginatedResponse,
+    ReportCreate,
+    ReportDetail,
+    ReportRead,
+    ReportRegenerate,
 )
 from app.services.storage import get_storage_client
 from app.workers.tasks import process_report

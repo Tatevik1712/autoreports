@@ -12,7 +12,7 @@ from app.api.deps import CurrentUser, DbSession, Pagination
 from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.models.models import SourceFile, SourceFileStatus
-from app.schemas.schemas import MessageResponse, PaginatedResponse, SourceFileRead
+from app.schemas.schemas import MessageResponse
 from app.services.document.parser import get_document_parser
 from app.services.storage import get_storage_client
 

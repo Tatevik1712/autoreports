@@ -4,10 +4,11 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 from celery.utils.log import get_task_logger
+
 from app.workers.celery_app import celery_app
-import asyncio
 
 logger = get_task_logger(__name__)
 
@@ -41,7 +42,7 @@ def process_report(self, report_id: str) -> dict:
     except Exception as exc:
         logger.error(f"[task] Failed report {report_id}: {exc}", exc_info=True)
         _run_async(_mark_report_error(report_id, str(exc)))
-        raise self.retry(exc=exc)
+        raise self.retry(exc=exc) from exc
 
 
 async def _process_report_async(report_id: str) -> dict:
@@ -50,12 +51,12 @@ async def _process_report_async(report_id: str) -> dict:
 
     from app.db.session import AsyncSessionLocal
     from app.models.models import Report, ReportSourceFile, ReportStatus
+    from app.schemas.schemas import TemplateSchema
     from app.services.document.parser import get_document_parser
     from app.services.llm.provider import get_llm_provider
-    from app.services.report.rag_generator import get_rag_report_generator
     from app.services.report.assembler import get_docx_assembler
+    from app.services.report.rag_generator import get_rag_report_generator
     from app.services.storage import get_storage_client
-    from app.schemas.schemas import TemplateSchema
 
     async with AsyncSessionLocal() as db:
         # BUG FIX: db.refresh() не принимает список атрибутов в asyncpg.
@@ -130,7 +131,7 @@ async def _process_report_async(report_id: str) -> dict:
 
         report.status = ReportStatus.done
         report.result_storage_key = result_key
-        report.completed_at = datetime.now(timezone.utc)
+        report.completed_at = datetime.now(UTC)
         report.llm_model = gen_result.llm_result.model
         report.template_version = report.template.version
         report.processing_seconds = gen_result.total_seconds
@@ -162,5 +163,5 @@ async def _mark_report_error(report_id: str, error_message: str) -> None:
         if report:
             report.status = ReportStatus.error
             report.error_message = error_message[:2000]
-            report.completed_at = datetime.now(timezone.utc)
+            report.completed_at = datetime.now(UTC)
             await db.commit()

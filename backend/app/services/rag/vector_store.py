@@ -64,7 +64,7 @@ class VectorStore:
         query_embedding: list[float],
         n_results: int = 15,
         where: dict | None = None,
-    ) -> list["SearchResult"]:
+    ) -> list[SearchResult]:
         n = min(n_results, self._collection.count() or 1)
         kwargs: dict = {
             "query_embeddings": [query_embedding],

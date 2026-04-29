@@ -9,8 +9,11 @@ from app.api.deps import CurrentAdmin, CurrentUser, DbSession, Pagination
 from app.core.logging import get_logger
 from app.models.models import AuditLog, ReportTemplate
 from app.schemas.schemas import (
-    MessageResponse, PaginatedResponse,
-    TemplateCreate, TemplateList, TemplateRead,
+    MessageResponse,
+    PaginatedResponse,
+    TemplateCreate,
+    TemplateList,
+    TemplateRead,
 )
 
 router = APIRouter(prefix="/templates", tags=["templates"])
@@ -24,13 +27,13 @@ async def list_templates(
     pagination: Pagination,
 ) -> PaginatedResponse:
     total_result = await db.execute(
-        select(func.count()).select_from(ReportTemplate).where(ReportTemplate.is_active == True)
+        select(func.count()).select_from(ReportTemplate).where(ReportTemplate.is_active.is_(True))
     )
     total = total_result.scalar_one()
 
     result = await db.execute(
         select(ReportTemplate)
-        .where(ReportTemplate.is_active == True)
+        .where(ReportTemplate.is_active.is_(True))
         .order_by(ReportTemplate.name, ReportTemplate.version.desc())
         .offset(pagination.offset)
         .limit(pagination.page_size)

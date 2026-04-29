@@ -2,9 +2,9 @@
 SQLAlchemy ORM модели.
 Все таблицы проекта в одном файле — удобно для alembic autogenerate.
 """
-import enum
+from datetime import UTC, datetime
+from enum import StrEnum
 import uuid
-from datetime import datetime, timezone
 
 from sqlalchemy import (
     Boolean,
@@ -24,7 +24,7 @@ from app.db.session import Base
 
 
 def _utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _uuid() -> str:
@@ -32,19 +32,19 @@ def _uuid() -> str:
 
 
 # Enums
-class UserRole(str, enum.Enum):
+class UserRole(StrEnum):
     user = "user"
     admin = "admin"
 
 
-class ReportStatus(str, enum.Enum):
+class ReportStatus(StrEnum):
     pending = "pending"         # ждёт в очереди
     processing = "processing"   # обрабатывается
     done = "done"               # готов
     error = "error"             # ошибка обработки
 
 
-class SourceFileStatus(str, enum.Enum):
+class SourceFileStatus(StrEnum):
     uploaded = "uploaded"
     parsed = "parsed"
     parse_error = "parse_error"

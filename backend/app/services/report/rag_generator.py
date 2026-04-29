@@ -10,9 +10,9 @@ RAG Generator v2 — стадия 1 (преобразование готовог
 """
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 import json
 import time
-from dataclasses import dataclass, field
 from typing import Any
 
 from jinja2 import Template
@@ -21,8 +21,7 @@ from app.core.logging import get_logger
 from app.schemas.schemas import TemplateSchema, TemplateSection, ValidationErrorItem
 from app.services.document.parser import ParsedDocument
 from app.services.llm.provider import LLMProvider, LLMResult
-from app.services.rag.context_builder import BuiltContext
-from app.services.rag.pipeline import IndexingStats, RAGPipeline, RetrievalDebugInfo
+from app.services.rag.pipeline import IndexingStats, RAGPipeline
 
 logger = get_logger(__name__)
 

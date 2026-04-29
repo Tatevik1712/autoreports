@@ -7,10 +7,8 @@ from __future__ import annotations
 import io
 
 from docx import Document
-from docx.oxml.ns import qn
-from docx.oxml import OxmlElement
-from docx.shared import Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Pt, RGBColor
 
 from app.core.logging import get_logger
 from app.schemas.schemas import TemplateSchema, ValidationErrorItem
@@ -122,7 +120,7 @@ class DocxAssembler:
         run.font.color.rgb = COLOR_ERROR
         run.font.bold = True
 
-        for i, err in enumerate(errors, 1):
+        for _i, err in enumerate(errors, 1):
             p = doc.add_paragraph(style="List Number")
             color = COLOR_ERROR if err.severity == "error" else COLOR_WARNING
             run = p.add_run(f"[{err.type}] {err.message}")

@@ -2,11 +2,11 @@
 JWT авторизация + хэширование паролей.
 Использует bcrypt напрямую (без passlib — несовместима с bcrypt 4.x).
 """
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import bcrypt
-from jose import JWTError, jwt
+from jose import jwt
 
 from app.core.config import get_settings
 
@@ -29,11 +29,11 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 def create_access_token(data: dict[str, Any]) -> str:
     payload = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(
+    expire = datetime.now(UTC) + timedelta(
         minutes=settings.access_token_expire_minutes
     )
     payload["exp"] = expire
-    payload["iat"] = datetime.now(timezone.utc)
+    payload["iat"] = datetime.now(UTC)
     return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
 
 

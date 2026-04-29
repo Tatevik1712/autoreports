@@ -9,10 +9,8 @@ BM25 — разреженный (ключевой) поиск.
 from __future__ import annotations
 
 import re
-import string
 
 from app.core.logging import get_logger
-from app.services.rag.vector_store import SearchResult
 
 logger = get_logger(__name__)
 
@@ -67,8 +65,8 @@ class BM25Index:
     def __init__(self, chunks_text: list[str], chunk_ids: list[str]) -> None:
         try:
             from rank_bm25 import BM25Okapi
-        except ImportError:
-            raise ImportError("Установите rank_bm25: pip install rank-bm25")
+        except ImportError as exc:
+            raise ImportError("Установите rank_bm25: pip install rank-bm25") from exc
 
         self._chunk_ids = chunk_ids
         self._tokenized = [tokenize(t) for t in chunks_text]
@@ -102,7 +100,7 @@ class BM25Retriever:
 
     def __init__(self, all_chunks_text: list[str], all_chunk_ids: list[str]) -> None:
         self._ids = all_chunk_ids
-        self._text_map = dict(zip(all_chunk_ids, all_chunks_text))
+        self._text_map = dict(zip(all_chunk_ids, all_chunks_text, strict=True))
         self._index = BM25Index(all_chunks_text, all_chunk_ids)
 
     def search(self, query: str, n_results: int = 10) -> list[tuple[str, float]]:

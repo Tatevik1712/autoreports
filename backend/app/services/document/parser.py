@@ -8,11 +8,14 @@
 - TXT: исправлена переменная encoding в блоке for/else
 """
 from __future__ import annotations
-import io
+
 from dataclasses import dataclass, field
+import io
 from pathlib import Path
-from app.core.logging import get_logger
+
 from docx import Document
+
+from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -40,21 +43,20 @@ class DocumentParser:
         try:
             if ext == ".pdf":
                 return await self._parse_pdf(content, filename, content_type)
-            elif ext in (".doc", ".docx"):
+            if ext in (".doc", ".docx"):
                 return await self._parse_docx(content, filename, content_type)
-            elif ext in (".xls", ".xlsx"):
+            if ext in (".xls", ".xlsx"):
                 return await self._parse_xlsx(content, filename, content_type)
-            elif ext == ".txt":
+            if ext == ".txt":
                 return await self._parse_txt(content, filename, content_type)
-            elif ext in (".png", ".jpg", ".jpeg", ".tiff", ".bmp"):
+            if ext in (".png", ".jpg", ".jpeg", ".tiff", ".bmp"):
                 return await self._parse_image(content, filename, content_type)
-            else:
-                return ParsedDocument(
-                    filename=filename,
-                    content_type=content_type,
-                    text="",
-                    error=f"Неподдерживаемый формат: {ext}",
-                )
+            return ParsedDocument(
+                filename=filename,
+                content_type=content_type,
+                text="",
+                error=f"Неподдерживаемый формат: {ext}",
+            )
         except Exception as exc:
             logger.error("document_parse_error", filename=filename, error=str(exc))
             return ParsedDocument(
@@ -72,7 +74,7 @@ class DocumentParser:
         self, content: bytes, filename: str, content_type: str
     ) -> ParsedDocument:
         try:
-            import pymupdf                      # fitz
+            import pymupdf  # fitz
             from pymupdf4llm import to_markdown
         except ImportError:
             # Fallback: если pymupdf4llm не установлен — используем обычный текст
@@ -316,8 +318,8 @@ class DocumentParser:
         self, content: bytes, filename: str, content_type: str
     ) -> ParsedDocument:
         try:
-            import pytesseract
             from PIL import Image
+            import pytesseract
 
             image = Image.open(io.BytesIO(content))
             text = pytesseract.image_to_string(image, lang="rus+eng")
